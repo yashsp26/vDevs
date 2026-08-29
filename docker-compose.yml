@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: vdevs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: vdevs
+      POSTGRES_PASSWORD: vdevs_dev_password
+      POSTGRES_DB: vdevs
+    ports:
+      - "5432:5432"
+    volumes:
+      - vdevs-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  vdevs-postgres-data:
