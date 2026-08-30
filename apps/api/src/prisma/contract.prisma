@@ -1,21 +1,151 @@
 // use prisma-next
 
 model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  username  String?
-  name      String?
-  posts     Post[]
-  createdAt TimestamptzString @default(now())
-  updatedAt temporal.updatedAtString()
+  id              String                   @id @default(uuid())
+  email           String                   @unique
+  username        String?                  @unique
+  name            String?
+  passwordHash    String?
+  emailVerifiedAt TimestamptzString?
+
+  sessions        Session[]
+  settings        UserSettings?
+  organizationMemberships OrganizationMembership[]
+  workspaceMemberships    WorkspaceMembership[]
+  ownedWorkspaces          Workspace[]
+
+  createdAt       TimestamptzString        @default(now())
+  updatedAt       temporal.updatedAtString()
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String?
-  author    User     @relation(fields: [authorId], references: [id])
-  authorId  Int
-  createdAt TimestamptzString @default(now())
-  updatedAt temporal.updatedAtString()
+model Session {
+  id          String            @id @default(uuid())
+  userId      String
+  tokenHash   String            @unique
+  expiresAt   TimestamptzString
+  lastUsedAt  TimestamptzString?
+
+  user        User              @relation(fields: [userId], references: [id])
+
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+}
+
+model UserSettings {
+  id          String            @id @default(uuid())
+  userId      String            @unique
+  theme       String?
+  timezone    String?
+  language    String?
+
+  user        User              @relation(fields: [userId], references: [id])
+
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+}
+
+model Organization {
+  id              String                   @id @default(uuid())
+  name            String
+  slug            String                   @unique
+
+  memberships     OrganizationMembership[]
+  workspaces      Workspace[]
+
+  createdAt       TimestamptzString        @default(now())
+  updatedAt       temporal.updatedAtString()
+}
+
+model OrganizationMembership {
+  id              String       @id @default(uuid())
+  organizationId  String
+  userId          String
+  roleId          String
+
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  user            User         @relation(fields: [userId], references: [id])
+  role            Role         @relation(fields: [roleId], references: [id])
+
+  createdAt       TimestamptzString @default(now())
+  updatedAt       temporal.updatedAtString()
+
+  @@unique([organizationId, userId])
+}
+
+model Workspace {
+  id              String        @id @default(uuid())
+  organizationId  String?
+  ownerId         String
+  name            String
+  slug            String
+  type            WorkspaceType
+
+  organization    Organization? @relation(fields: [organizationId], references: [id])
+  owner           User          @relation(fields: [ownerId], references: [id])
+  memberships     WorkspaceMembership[]
+
+  createdAt       TimestamptzString @default(now())
+  updatedAt       temporal.updatedAtString()
+
+  @@unique([organizationId, slug])
+}
+
+model WorkspaceMembership {
+  id           String    @id @default(uuid())
+  workspaceId String
+  userId      String
+  roleId      String
+
+  workspace    Workspace @relation(fields: [workspaceId], references: [id])
+  user         User      @relation(fields: [userId], references: [id])
+  role         Role      @relation(fields: [roleId], references: [id])
+
+  createdAt    TimestamptzString @default(now())
+  updatedAt    temporal.updatedAtString()
+
+  @@unique([workspaceId, userId])
+}
+
+model Role {
+  id              String                   @id @default(uuid())
+  name            String
+  description     String?
+  scope           String
+  isSystem        Boolean                  @default(true)
+  organizationId  String?
+
+  organizationMemberships OrganizationMembership[]
+  workspaceMemberships    WorkspaceMembership[]
+  permissions             RolePermission[]
+
+  createdAt       TimestamptzString @default(now())
+  updatedAt       temporal.updatedAtString()
+}
+
+model Permission {
+  id          String           @id @default(uuid())
+  key         String           @unique
+  description String?
+
+  roles       RolePermission[]
+
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+
+  role         Role       @relation(fields: [roleId], references: [id])
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  createdAt    TimestamptzString @default(now())
+
+  @@id([roleId, permissionId])
+}
+
+enum WorkspaceType {
+  PERSONAL
+  ORGANIZATION
 }
