@@ -4,9 +4,9 @@ services:
     container_name: vdevs-postgres
     restart: unless-stopped
     environment:
-      POSTGRES_USER: vdevs
-      POSTGRES_PASSWORD: vdevs_dev_password
-      POSTGRES_DB: vdevs
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
       - "5433:5432"
     volumes:
